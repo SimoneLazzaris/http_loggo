@@ -10,7 +10,7 @@ For that, you could use the syslog output and then rely on the good old rsyslog 
 
 With this simple script, those details are extracted from the json http payload and stored in the logfile.
 
-#Installation:
+# Installation:
 To install, you'll have to fix IP address (default is 192.168.100.40) in fluent.yaml.
 Then:
 
