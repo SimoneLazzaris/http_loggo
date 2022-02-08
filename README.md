@@ -20,3 +20,9 @@ helm install -n fluent --create-namespace fluent fluent/fluent-bit -f fluent.yam
 make install
 ```
 Logfile is /var/log/fluentbit.log; by default, it will keep 20MB of logs, and then it will rotate and 5 rotations will be kept.
+# Requirements
+You'll need:
+- helm
+- make (for installation, but you can also manually copy some files)
+- python3 (tested on version 3.9)
+- sdnotify for python3 (`apt install python3-sdnotify` on debian)
