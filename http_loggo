@@ -71,11 +71,14 @@ def run(port, logfile, logsize, logcount, server_class=HTTPServer, handler_class
 
 if __name__ == '__main__':
     import argparse
+    import sdnotify
     parser=argparse.ArgumentParser("Fluent K8s HTTP logger")
     parser.add_argument("--port", type=int, default=8080, help="Port")
     parser.add_argument("--logfile", type=str, default="/tmp/fluent.log", help="Log file")
     parser.add_argument("--logsize", type=int, default=20, help="Log file size (MB)")
     parser.add_argument("--logcount", type=int, default=5, help="Log file keep count")
     args=parser.parse_args()
+    n = sdnotify.SystemdNotifier()
+    n.notify("READY=1")
     run(port=args.port, logfile=args.logfile, logsize=args.logsize, logcount=args.logcount)
 

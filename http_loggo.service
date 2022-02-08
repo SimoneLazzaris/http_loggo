@@ -1,0 +1,11 @@
+[Unit]
+Description=Fluentbit HTTP logger
+Wants=network-online.target
+After=network-online.target
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+Type=notify
+ExecStart=/usr/local/bin/http_loggo --logfile /var/log/fluentbit.log
+Restart=always
