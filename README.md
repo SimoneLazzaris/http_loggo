@@ -11,15 +11,14 @@ For that, you could use the syslog output and then rely on the good old rsyslog 
 With this simple script, those details are extracted from the json http payload and stored in the logfile.
 
 # Installation:
-To install, you'll have to fix IP address (default is 192.168.100.40) in fluent.yaml.
-Then:
 
 ```sh
 helm repo add fluent https://fluent.github.io/helm-charts
-helm install -n fluent --create-namespace fluent fluent/fluent-bit -f fluent.yaml
+helm install -n fluent --create-namespace fluent fluent/fluent-bit -f fluent.yaml --set loggoPasswd=yourpasswordhere --set loggoHost=yourhostiphere
+
 make install
 ```
-Logfile is /var/log/fluentbit.log; by default, it will keep 20MB of logs, and then it will rotate and 5 rotations will be kept.
+Logfile is /var/log/fluentbit/fluentbit.log; by default, it will keep 20MB of logs, and then it will rotate and 5 rotations will be kept.
 # Requirements
 You'll need:
 - helm

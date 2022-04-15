@@ -44,6 +44,8 @@ config:
         Port 8080
         Uri /host
         Format json
+        http_User fluentbit
+        http_Passwd {{ .Values.loggoPasswd }}
     [OUTPUT]
         Name http
         Match kube.*
@@ -51,3 +53,5 @@ config:
         Port 8080
         Uri /kube
         Format json
+        http_User fluentbit
+        http_Passwd {{ .Values.loggoPasswd }}
