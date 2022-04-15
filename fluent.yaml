@@ -40,14 +40,14 @@ config:
     [OUTPUT]
         Name http
         Match host.*
-        Host 192.168.100.40
+        Host {{ .Values.loggoHost }}
         Port 8080
         Uri /host
         Format json
     [OUTPUT]
         Name http
         Match kube.*
-        Host 192.168.100.40
+        Host {{ .Values.loggoHost }}
         Port 8080
         Uri /kube
         Format json

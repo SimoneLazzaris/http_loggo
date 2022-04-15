@@ -6,8 +6,7 @@ Usage::
 """
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import logging, logging.handlers
-import json, re 
-
+import json, re, base64, bcrypt 
 
 class S(BaseHTTPRequestHandler):
     def __init__(self, request, client_address, server):
@@ -18,12 +17,48 @@ class S(BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header('Content-type', 'text/html')
         self.end_headers()
+        
+    def _check_auth(self):
+        if self.headers.get('Authorization') == None:
+            self.send_response(401)
+            self.send_header(
+                'WWW-Authenticate', 'Basic realm="HTTP Loggo"')
+            self.end_headers()
+            return False
+        try:
+            (typ, val)=self.headers.get('Authorization').split(' ')
+            if typ.lower() != "basic":
+                return False
+            authstring = base64.b64decode(val)
+            (ht_user, ht_pass) = authstring.split(b':')
+            if not self.server.check_auth(ht_user,ht_pass):
+                self.send_response(403)
+                self.send_header('Content-type', 'text/plain')
+                self.end_headers()
+                self.wfile.write("Authentication failed\n".encode("utf-8"))
+                return False
+        except Exception as e:
+            logging.exception(e)
+            return False
+        return True
 
     def do_GET(self):
+        if not self._check_auth():
+            return
+        if self.path=='/log':
+            return self.do_GET_log()
+        
         logging.info("GET request,\nPath: %s\nHeaders:\n%s\n", str(self.path), str(self.headers))
         self._set_response()
         self.wfile.write("GET request for {}\n".format(self.path).encode('utf-8'))
         
+    def do_GET_log(self):
+        self.send_response(200)
+        self.send_header('Content-type', 'text/plain')
+        self.end_headers()
+        with open(self.server.logfile, 'rb') as file: 
+            self.wfile.write(file.read())
+            
     def _log(self, d):
         ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
         msg = ansi_escape.sub("",d["log"])                                             
@@ -34,9 +69,11 @@ class S(BaseHTTPRequestHandler):
                          msg)
         
     def do_POST(self):
+        if not self._check_auth():
+            return
         content_length = int(self.headers['Content-Length']) 
         post_data = self.rfile.read(content_length) 
-        dat = json.loads(post_data)
+        dat = json.loads(post_data.decode('utf8'))
         if isinstance(dat,list):
             for d in dat:
                 self._log(d)
@@ -46,9 +83,22 @@ class S(BaseHTTPRequestHandler):
         self._set_response()
         self.wfile.write("POST request for {}\n".format(self.path).encode('utf-8'))
 
+class MyHttpServer(HTTPServer):
+    pw_map={}
+    logfile=None
+    def __init__(self, address, handlerClass=S):
+        super().__init__(address, handlerClass)
+        
+    def parse_htpasswd(self, htfile):
+        f=open(htfile,"rt")
+        for l in f:
+            user,pwd = l.strip().split(':')
+            self.pw_map[user.encode('ascii')]=pwd.encode('ascii')
+            
+    def check_auth(self, ht_user, ht_pass):
+        return (ht_user in self.pw_map) and (bcrypt.checkpw(ht_pass, self.pw_map[ht_user]))
 
-
-def run(port, logfile, logsize, logcount, server_class=HTTPServer, handler_class=S):
+def run(port, logfile, logsize, logcount):
     logging.basicConfig(level=logging.INFO)
     # init filelogger    
     filelogger = logging.getLogger("filelogger")
@@ -60,7 +110,10 @@ def run(port, logfile, logsize, logcount, server_class=HTTPServer, handler_class
     filelogger.addHandler(handler)
 
     server_address = ('', port)
-    httpd = server_class(server_address, handler_class)
+    httpd = MyHttpServer(server_address)
+    if args.htpasswd != None:
+        httpd.parse_htpasswd(args.htpasswd)
+    httpd.logfile=logfile    
     logging.info('Starting httpd...\n')
     try:
         httpd.serve_forever()
@@ -77,6 +130,7 @@ if __name__ == '__main__':
     parser.add_argument("--logfile", type=str, default="/tmp/fluent.log", help="Log file")
     parser.add_argument("--logsize", type=int, default=20, help="Log file size (MB)")
     parser.add_argument("--logcount", type=int, default=5, help="Log file keep count")
+    parser.add_argument("--htpasswd", type=str, default=None, help="htpasswd file")
     args=parser.parse_args()
     n = sdnotify.SystemdNotifier()
     n.notify("READY=1")
