@@ -59,7 +59,7 @@ class S(BaseHTTPRequestHandler):
         with open(self.server.logfile, 'rb') as file: 
             self.wfile.write(file.read())
             
-    def _log(self, d):
+    def _logmap(self, d):
         ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
         msg = ansi_escape.sub("",d["log"])                                             
         self.logger.info("%s@%s[%s]: %s", 
@@ -67,7 +67,20 @@ class S(BaseHTTPRequestHandler):
                          d["kubernetes"]["pod_name"], 
                          d["kubernetes"]["namespace_name"],
                          msg)
+
+    def _logstr(self, d):
+        ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+        msg = ansi_escape.sub("",d)                                             
+        self.logger.info("STR: %s", d)
         
+    def _log(self, d):
+        if isinstance(d,map) and "log" in d:
+            self._logmap(d)
+        elif isinstance(d, str):
+            self._logstr(d)
+        else:
+            print("??? <%s>", repr(d))
+            
     def do_POST(self):
         if not self._check_auth():
             return
@@ -77,7 +90,7 @@ class S(BaseHTTPRequestHandler):
         if isinstance(dat,list):
             for d in dat:
                 self._log(d)
-        elif isinstance(dat,map) and "log" in dat:
+        else:
             self._log(dat)
 
         self._set_response()
