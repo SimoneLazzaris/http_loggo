@@ -19,6 +19,8 @@ class S(BaseHTTPRequestHandler):
         self.end_headers()
         
     def _check_auth(self):
+        if not self.server.is_auth_required():
+            return True
         if self.headers.get('Authorization') == None:
             self.send_response(401)
             self.send_header(
@@ -110,8 +112,10 @@ class MyHttpServer(HTTPServer):
             
     def check_auth(self, ht_user, ht_pass):
         return (ht_user in self.pw_map) and (bcrypt.checkpw(ht_pass, self.pw_map[ht_user]))
-
-def run(port, logfile, logsize, logcount):
+    def is_auth_required(self):
+        return len(self.pw_map)!=0
+    
+def run(port, logfile, logsize, logcount, htpasswd):
     logging.basicConfig(level=logging.INFO)
     # init filelogger    
     filelogger = logging.getLogger("filelogger")
@@ -124,8 +128,8 @@ def run(port, logfile, logsize, logcount):
 
     server_address = ('', port)
     httpd = MyHttpServer(server_address)
-    if args.htpasswd != None:
-        httpd.parse_htpasswd(args.htpasswd)
+    if htpasswd != None:
+        httpd.parse_htpasswd(htpasswd)
     httpd.logfile=logfile    
     logging.info('Starting httpd...\n')
     try:
@@ -147,5 +151,5 @@ if __name__ == '__main__':
     args=parser.parse_args()
     n = sdnotify.SystemdNotifier()
     n.notify("READY=1")
-    run(port=args.port, logfile=args.logfile, logsize=args.logsize, logcount=args.logcount)
+    run(port=args.port, logfile=args.logfile, logsize=args.logsize, logcount=args.logcount, htpasswd=args.htpasswd)
 
