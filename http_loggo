@@ -76,12 +76,12 @@ class S(BaseHTTPRequestHandler):
         self.logger.info("STR: %s", d)
         
     def _log(self, d):
-        if isinstance(d,map) and "log" in d:
+        if isinstance(d,dict) and "log" in d:
             self._logmap(d)
         elif isinstance(d, str):
             self._logstr(d)
         else:
-            print("??? <%s>", repr(d))
+            print("??? <%s>%s"%(type(d), repr(d)))
             
     def do_POST(self):
         if not self._check_auth():
