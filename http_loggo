@@ -4,7 +4,7 @@ Very simple HTTP server in python for logging requests
 Usage::
     ./server.py [<port>]
 """
-from http.server import BaseHTTPRequestHandler, HTTPServer
+from http.server import BaseHTTPRequestHandler, HTTPServer, ThreadingHTTPServer
 import logging, logging.handlers
 import json, re, base64, bcrypt 
 
@@ -98,9 +98,10 @@ class S(BaseHTTPRequestHandler):
         self._set_response()
         self.wfile.write("POST request for {}\n".format(self.path).encode('utf-8'))
 
-class MyHttpServer(HTTPServer):
+class MyHttpServer(ThreadingHTTPServer):
     pw_map={}
     logfile=None
+    timeout = 10
     def __init__(self, address, handlerClass=S):
         super().__init__(address, handlerClass)
         
