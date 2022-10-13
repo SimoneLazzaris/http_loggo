@@ -116,7 +116,7 @@ class MyHttpServer(ThreadingHTTPServer):
     def is_auth_required(self):
         return len(self.pw_map)!=0
     
-def run(port, logfile, logsize, logcount, htpasswd):
+def run(address, port, logfile, logsize, logcount, htpasswd):
     logging.basicConfig(level=logging.INFO)
     # init filelogger    
     filelogger = logging.getLogger("filelogger")
@@ -127,7 +127,7 @@ def run(port, logfile, logsize, logcount, htpasswd):
     handler.setFormatter(formatter)
     filelogger.addHandler(handler)
 
-    server_address = ('', port)
+    server_address = (address, port)
     httpd = MyHttpServer(server_address)
     if htpasswd != None:
         httpd.parse_htpasswd(htpasswd)
@@ -144,6 +144,7 @@ if __name__ == '__main__':
     import argparse
     import sdnotify
     parser=argparse.ArgumentParser("Fluent K8s HTTP logger")
+    parser.add_argument("--address", type=str, default="0.0.0.0", help="Address")
     parser.add_argument("--port", type=int, default=8080, help="Port")
     parser.add_argument("--logfile", type=str, default="/tmp/fluent.log", help="Log file")
     parser.add_argument("--logsize", type=int, default=20, help="Log file size (MB)")
@@ -152,5 +153,5 @@ if __name__ == '__main__':
     args=parser.parse_args()
     n = sdnotify.SystemdNotifier()
     n.notify("READY=1")
-    run(port=args.port, logfile=args.logfile, logsize=args.logsize, logcount=args.logcount, htpasswd=args.htpasswd)
+    run(address=args.address, port=args.port, logfile=args.logfile, logsize=args.logsize, logcount=args.logcount, htpasswd=args.htpasswd)
 
